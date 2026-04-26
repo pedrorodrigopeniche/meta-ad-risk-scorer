@@ -30,7 +30,7 @@ export function saveAds(ads: Ad[]): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(ads))
   } catch {
     // localStorage quota exceeded — caller should handle
-    throw new Error('localStorage lleno. Elimina algunos anuncios para continuar.')
+    throw new Error('El almacenamiento local está lleno. Puedes limpiar imágenes guardadas sin borrar tus análisis.')
   }
 }
 
@@ -48,6 +48,16 @@ export function upsertAd(ad: Ad): void {
 
 export function deleteAd(id: string): void {
   saveAds(loadAds().filter((a) => a.id !== id))
+}
+
+/** Remove imageBase64 from every ad, keeping all analysis data. */
+export function clearImagePreviews(): void {
+  const ads = loadAds()
+  saveAds(ads.map((ad) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { imageBase64: _img, ...rest } = ad
+    return rest as Ad
+  }))
 }
 
 export function exportCSV(ads: Ad[]): void {

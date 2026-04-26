@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { loadAds, deleteAd, exportCSV } from '@/lib/storage'
+import { loadAds, deleteAd, exportCSV, clearImagePreviews } from '@/lib/storage'
 import { STATUS_CONFIG, ACCOUNT_CONFIG, RISK_LEVEL_LABEL, VERDICT_CONFIG } from '@/lib/constants'
 import type { Ad, SortField, SortDir } from '@/types'
 import { AdCard } from '@/components/AdCard'
@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Download, Plus, Search, AlertTriangle, Bot, TrendingDown, Lightbulb } from 'lucide-react'
+import { Download, Plus, Search, AlertTriangle, Bot, TrendingDown, Lightbulb, ImageOff } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function DashboardPage() {
@@ -98,6 +98,12 @@ export default function DashboardPage() {
     toast.success('CSV exportado')
   }
 
+  function handleClearImages() {
+    clearImagePreviews()
+    setAds(loadAds())
+    toast.success('Imágenes eliminadas — análisis conservados')
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -109,6 +115,9 @@ export default function DashboardPage() {
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handleExport}>
             <Download className="h-4 w-4 mr-1.5" />Exportar CSV
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleClearImages}>
+            <ImageOff className="h-4 w-4 mr-1.5" />Limpiar imágenes guardadas
           </Button>
           <Button size="sm" onClick={() => router.push('/ideas')} variant="outline">
             <Lightbulb className="h-4 w-4 mr-1.5" />Aprendizajes

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { getAd, upsertAd, deleteAd } from '@/lib/storage'
+import { compressImageToBase64 } from '@/lib/imageUtils'
 import type { Ad, ClaudeAnalysis, AdAccount, AdStatus, ClaudeApiResult } from '@/types'
 import { STATUSES, STATUS_CONFIG, ACCOUNTS, ACCOUNT_CONFIG } from '@/lib/constants'
 import { ClaudeAnalysisForm } from '@/components/ClaudeAnalysisForm'
@@ -65,17 +66,17 @@ export default function AdDetailPage() {
 
   const canAnalyze = !!content.trim() || !!newImageFile
 
-  function handleImageFile(file: File) {
+  async function handleImageFile(file: File) {
     if (!IMAGE_TYPES.includes(file.type)) { toast.error('Solo imágenes PNG/JPEG'); return }
     setNewImageFile(file)
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result as string
-      setImageBase64(dataUrl.split(',')[1])
+    try {
+      const compressed = await compressImageToBase64(file)
+      setImageBase64(compressed)
       setImageFileName(file.name)
       setIsDirty(true)
+    } catch {
+      toast.error('Error al procesar la imagen')
     }
-    reader.readAsDataURL(file)
   }
 
   async function handleAnalyze() {
@@ -94,9 +95,9 @@ export default function AdDetailPage() {
         body.imageMediaType = newImageFile.type
         body.imageFileName = newImageFile.name
       } else if (imageBase64 && imageFileName) {
-        // Re-send stored image
+        // Re-send stored image (always JPEG after compression)
         body.imageBase64 = imageBase64
-        body.imageMediaType = imageFileName.endsWith('.png') ? 'image/png' : 'image/jpeg'
+        body.imageMediaType = 'image/jpeg'
         body.imageFileName = imageFileName
       }
       const res = await fetch('/api/analyze-claude', {
@@ -241,7 +242,7 @@ export default function AdDetailPage() {
               <div className="relative rounded-lg overflow-hidden border bg-muted">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={`data:${imageFileName.endsWith('.png') ? 'image/png' : 'image/jpeg'};base64,${imageBase64}`}
+                  src={`data:image/jpeg;base64,${imageBase64}`}
                   alt="Ad preview" className="w-full object-contain max-h-64"
                 />
                 <div className="absolute top-2 right-2 flex gap-1">

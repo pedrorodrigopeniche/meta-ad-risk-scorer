@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { upsertAd } from '@/lib/storage'
+import { compressImageToBase64 } from '@/lib/imageUtils'
 import type { Ad, ClaudeAnalysis, AdAccount, AdStatus, ClaudeApiResult } from '@/types'
 import { ACCOUNTS, STATUSES, STATUS_CONFIG, ACCOUNT_CONFIG } from '@/lib/constants'
 import { ClaudeAnalysisForm } from '@/components/ClaudeAnalysisForm'
@@ -47,18 +48,17 @@ export default function NuevoPage() {
 
   const canAnalyze = !!content.trim() || !!imageFile
 
-  function handleFileRead(file: File) {
+  async function handleFileRead(file: File) {
     if (IMAGE_TYPES.includes(file.type)) {
       setImageFile(file)
       setImageFileName(file.name)
       setFileName(undefined)
-      // Read base64 for preview + storage
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const dataUrl = e.target?.result as string
-        setImageBase64(dataUrl.split(',')[1])
+      try {
+        const compressed = await compressImageToBase64(file)
+        setImageBase64(compressed)
+      } catch {
+        toast.error('Error al procesar la imagen')
       }
-      reader.readAsDataURL(file)
       return
     }
     if (!file.type.startsWith('text/') && file.type !== 'application/json') {
@@ -236,7 +236,7 @@ export default function NuevoPage() {
               <div className="relative w-full rounded-lg overflow-hidden border bg-muted max-h-48">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={`data:${imageFileName.endsWith('.png') ? 'image/png' : 'image/jpeg'};base64,${imageBase64}`}
+                  src={`data:image/jpeg;base64,${imageBase64}`}
                   alt="Preview" className="w-full object-contain max-h-48"
                 />
                 <button
